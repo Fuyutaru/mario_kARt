@@ -190,16 +190,10 @@ function init() {
 
     //
 
-    // const ball = new THREE.SphereGeometry(0.1, 32, 32).translate(0, 0.1, 0);
-    // const material = new THREE.MeshPhongMaterial({ color: 0xf11111 });
-    // const ballmesh = new THREE.Mesh(ball, material);
-    // scene.add(ballmesh);
+
     carload(0, 0, 0);
 
-    // if (reticle && reticle.visible) {
-    //     reticle.matrix.decompose(ballmesh.position, ballmesh.quaternion, ballmesh.scale);
-    //     scene.add(ballmesh);
-    // }
+
 
 
 
@@ -374,7 +368,44 @@ function onWindowResize() {
 
 // }
 
+
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+const sound = new THREE.Audio(listener);
+
+
+function initAudio() {
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load('/mario_kARt/music/ambiance.mp3', function (buffer) {
+        sound.setBuffer(buffer);
+        sound.setLoop(true);
+        sound.setVolume(0.5);
+        sound.play();
+    });
+}
+
+const listener2 = new THREE.AudioListener();
+camera.add(listener2);
+
+const sound2 = new THREE.Audio(listener);
+
+
+function initAudioCoin() {
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load('/mario_kARt/music/coin.mp3', function (buffer) {
+        sound2.setBuffer(buffer);
+        sound2.setLoop(false);
+        sound2.setVolume(1);
+        sound2.play();
+    });
+}
+
+renderer.xr.addEventListener('sessionstart', initAudio);
+
+
 function animate(timestamp, frame) {
+
     if (frame) {
 
         const referenceSpace = renderer.xr.getReferenceSpace();
@@ -397,6 +428,7 @@ function animate(timestamp, frame) {
                     object.remove(coin); // Retire le coin du groupe
 
                     console.log(object.children.length);
+                    initAudioCoin();
                     // Optionnel : disposer des ressources du coin si nécessaire
                 }
             }
@@ -427,7 +459,7 @@ function animate(timestamp, frame) {
                 if (!coinsLoaded) {
                     const position = new THREE.Vector3();
                     reticle.matrix.decompose(position, new THREE.Quaternion(), new THREE.Vector3());
-                    coinload(200, position);
+                    coinload(400, position);
                     coinsLoaded = true;
 
                 }
