@@ -14,11 +14,114 @@ let hitTestSource = null;
 let hitTestSourceRequested = false;
 
 let car;
-let mixer;
+let mixer, mixers;
+let object;
+
+let coinsLoaded = false;
+let created = false;
+
 
 const clock = new THREE.Clock();
 
 const loader = new GLTFLoader();
+const loader2 = new GLTFLoader();
+
+// function coinload(count) {
+
+//     loader2.load('/mario_kARt/assets/models/coin.glb', function (gltf) {
+//         object = new THREE.Group();
+//         mixers = []
+
+//         const gridSize = Math.ceil(Math.sqrt(count)); // Détermine la taille de la grille
+//         const spacing = 1; // Distance entre les objets
+//         const offset = (gridSize - 1) * spacing * 0.5; // Décale pour centrer
+
+//         for (let i = 0; i < count; i++) {
+//             const x = i % gridSize;
+//             const y = Math.floor(i / gridSize);
+
+//             // Clone proprement le modèle avec les animations
+//             const clone = SkeletonUtils.clone(gltf.scene);
+
+//             scene.add(clone);
+
+//             clone.traverse((child) => {
+//                 if (child.isMesh) {
+//                     child.castShadow = true; // Permet au clone de projeter une ombre
+//                     child.receiveShadow = true; // Permet au clone de recevoir une ombre
+//                 }
+//             });
+
+//             // Ajouter l'animation pour chaque clone
+//             const mixer = new THREE.AnimationMixer(clone);
+//             console.log(gltf.animations);
+//             const action = mixer.clipAction(gltf.animations[0]);
+//             action.play();
+//             mixers.push(mixer);
+
+//             // Positionnement en grille centrée
+//             clone.position.set(
+//                 x * spacing - offset,  // Décale pour centrer la grille
+//                 0,                     // Niveau du sol
+//                 y * spacing - offset   // Décale pour centrer la grille
+//             );
+//             clone.rotation.y = Math.PI; // Rotation si nécessaire
+
+//             object.add(clone);
+//         }
+
+//         scene.add(object);
+
+
+//     });
+// }
+
+function coinload(count, position) {
+    loader2.load('/mario_kARt/assets/models/coin.glb', function (gltf) {
+        object = new THREE.Group();
+        mixers = [];
+
+        const gridSize = Math.ceil(Math.sqrt(count)); // Taille de la grille
+        const spacing = 0.5; // Distance entre chaque pièce (à ajuster selon besoin)
+        const offset = (gridSize) * spacing * 0.5; // Pour centrer la grille
+
+        for (let i = 0; i < count; i++) {
+            const x = i % gridSize;
+            const z = Math.floor(i / gridSize);
+
+            const clone = SkeletonUtils.clone(gltf.scene);
+            clone.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            // Ajouter l'animation pour le clone
+            const mixer = new THREE.AnimationMixer(clone);
+            const action = mixer.clipAction(gltf.animations[0]);
+            action.play();
+            mixers.push(mixer);
+
+            // Positionnement en grille à partir de la position détectée
+            clone.position.set(
+                position.x + (x * spacing - offset),
+                position.y, // Utilise la hauteur détectée
+                position.z + (z * spacing - offset)
+            );
+            clone.rotation.y = Math.PI; // Rotation éventuelle
+
+            clone.scale.set(0.1, 0.1, 0.1);
+
+            object.add(clone);
+        }
+        scene.add(object);
+    });
+}
+
+
+// coinload(10);
+
 
 function carload(x, y, z) {
 
@@ -42,7 +145,7 @@ function carload(x, y, z) {
             z
         );
 
-        clone.scale.set(0.1, 0.1, 0.1);
+        clone.scale.set(0.05, 0.05, 0.05);
         // clone.rotation.y = Math.PI;
 
         car.add(clone);
@@ -51,6 +154,10 @@ function carload(x, y, z) {
 
 
     });
+}
+
+function distance(pos1, pos2) {
+    return Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2) + Math.pow(pos1.z - pos2.z, 2));
 }
 
 init();
@@ -83,10 +190,10 @@ function init() {
 
     //
 
-    const ball = new THREE.SphereGeometry(0.2, 32, 32).translate(0, 0.1, 0);
-    const material = new THREE.MeshPhongMaterial({ color: 0xf11111 });
-    const ballmesh = new THREE.Mesh(ball, material);
-    scene.add(ballmesh);
+    // const ball = new THREE.SphereGeometry(0.1, 32, 32).translate(0, 0.1, 0);
+    // const material = new THREE.MeshPhongMaterial({ color: 0xf11111 });
+    // const ballmesh = new THREE.Mesh(ball, material);
+    // scene.add(ballmesh);
     carload(0, 0, 0);
 
     // if (reticle && reticle.visible) {
@@ -95,43 +202,81 @@ function init() {
     // }
 
 
+
     function onSelect() {
 
-        if (reticle.visible) {
+        if (reticle.visible && car) {
+
+            const position = new THREE.Vector3();
+            reticle.matrix.decompose(position, new THREE.Quaternion(), new THREE.Vector3());
+
+
 
             // à mofifier pour faire bouger la boule
             const geometry = new THREE.SphereGeometry(0.2, 32, 32).translate(0, 0.1, 0);
             const material = new THREE.MeshPhongMaterial({ color: 0xffffff * Math.random() });
             const mesh = new THREE.Mesh(geometry, material);
-            reticle.matrix.decompose(mesh.position, ballmesh.quaternion, ballmesh.scale);
+            // reticle.matrix.decompose(mesh.position, ballmesh.quaternion, ballmesh.scale);
+            reticle.matrix.decompose(mesh.position, car.quaternion, car.scale);
             // mesh.scale.y = Math.random() * 2 + 1;
             // scene.add(mesh);
 
             // reticle.matrix.decompose(ballmesh.position, ballmesh.quaternion, ballmesh.scale);
             // scene.add(ballmesh);
 
-            new TWEEN.Tween(ballmesh.position)
-                .to(
-                    {
-                        x: mesh.position.x,
-                        y: mesh.position.y,
-                        z: mesh.position.z,
-                    },
-                    500
-                )
-                .start()
-            if (car) {
-                new TWEEN.Tween(car.position)
-                    .to(
-                        {
-                            x: mesh.position.x,
-                            y: mesh.position.y,
-                            z: mesh.position.z,
-                        },
-                        500
-                    )
-                    .start()
-            }
+
+            const direction = new THREE.Vector3().subVectors(position, car.position).normalize();
+            direction.y = 0;
+            let desiredAngle = Math.atan2(direction.x, direction.z);
+            desiredAngle += Math.PI / 2;
+
+            const rotationDuration = 500;
+            const positionDuration = 1000;
+            const initialAngle = car.rotation.y;
+
+
+            // new TWEEN.Tween(ballmesh.position)
+            //     .to(
+            //         {
+            //             x: mesh.position.x,
+            //             y: mesh.position.y,
+            //             z: mesh.position.z,
+            //         },
+            //         500
+            //     )
+            //     .start()
+
+
+
+
+            new TWEEN.Tween({ angle: initialAngle })
+                .to({ angle: desiredAngle }, rotationDuration)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .onUpdate(function (obj) {
+                    car.rotation.y = obj.angle;
+                })
+                .onComplete(function () {
+                    new TWEEN.Tween(car.position)
+                        .to({ x: position.x, y: position.y, z: position.z }, positionDuration)
+                        .easing(TWEEN.Easing.Quadratic.Out)
+                        .start();
+                })
+                .start();
+
+
+            // if (car) {
+            //     car.lookAt(position);
+            //     new TWEEN.Tween(car.position)
+            //         .to(
+            //             {
+            //                 x: position.x,
+            //                 y: position.y,
+            //                 z: position.z,
+            //             },
+            //             1000
+            //         )
+            //         .start()
+            // }
 
 
         }
@@ -167,9 +312,69 @@ function onWindowResize() {
 
 //
 
-function animate(timestamp, frame) {
-    // ajoute l'update de la boule / car
+// function animate(timestamp, frame) {
+//     // ajoute l'update de la boule / car
 
+//     if (frame) {
+
+//         const referenceSpace = renderer.xr.getReferenceSpace();
+//         const session = renderer.xr.getSession();
+
+//         TWEEN.update(timestamp);
+
+//         const delta = clock.getDelta();
+//         if (mixers) mixers.forEach(mixer => mixer.update(delta));
+
+
+//         if (hitTestSourceRequested === false) {
+
+//             session.requestReferenceSpace('viewer').then(function (referenceSpace) {
+
+//                 session.requestHitTestSource({ space: referenceSpace }).then(function (source) {
+
+//                     hitTestSource = source;
+
+//                 });
+
+//             });
+
+//             session.addEventListener('end', function () {
+
+//                 hitTestSourceRequested = false;
+//                 hitTestSource = null;
+
+//             });
+
+//             hitTestSourceRequested = true;
+
+//         }
+
+//         if (hitTestSource) {
+
+//             const hitTestResults = frame.getHitTestResults(hitTestSource);
+
+//             if (hitTestResults.length) {
+
+//                 const hit = hitTestResults[0];
+
+//                 reticle.visible = true;
+//                 reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+
+//             } else {
+
+//                 reticle.visible = false;
+
+//             }
+
+//         }
+
+//     }
+
+//     renderer.render(scene, camera);
+
+// }
+
+function animate(timestamp, frame) {
     if (frame) {
 
         const referenceSpace = renderer.xr.getReferenceSpace();
@@ -177,53 +382,67 @@ function animate(timestamp, frame) {
 
         TWEEN.update(timestamp);
 
+
+
         const delta = clock.getDelta();
+        if (mixers) mixers.forEach(mixer => mixer.update(delta));
 
+        if (car && object) {
+            // console.log("ouiiiiiiiiiiiiiiiiiiiii");
+            for (let i = object.children.length - 1; i >= 0; i--) {
+                let coin = object.children[i];
+                if (distance(coin.position, car.position) < 0.2) {
+                    console.log("collision");
 
-        if (hitTestSourceRequested === false) {
+                    object.remove(coin); // Retire le coin du groupe
 
-            session.requestReferenceSpace('viewer').then(function (referenceSpace) {
-
-                session.requestHitTestSource({ space: referenceSpace }).then(function (source) {
-
-                    hitTestSource = source;
-
-                });
-
-            });
-
-            session.addEventListener('end', function () {
-
-                hitTestSourceRequested = false;
-                hitTestSource = null;
-
-            });
-
-            hitTestSourceRequested = true;
-
+                    console.log(object.children.length);
+                    // Optionnel : disposer des ressources du coin si nécessaire
+                }
+            }
         }
 
+        if (hitTestSourceRequested === false) {
+            session.requestReferenceSpace('viewer').then(function (refSpace) {
+                session.requestHitTestSource({ space: refSpace }).then(function (source) {
+                    hitTestSource = source;
+                });
+            });
+            session.addEventListener('end', function () {
+                hitTestSourceRequested = false;
+                hitTestSource = null;
+            });
+            hitTestSourceRequested = true;
+        }
+
+
         if (hitTestSource) {
-
             const hitTestResults = frame.getHitTestResults(hitTestSource);
-
             if (hitTestResults.length) {
-
                 const hit = hitTestResults[0];
-
                 reticle.visible = true;
                 reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
 
+                // Si les pièces ne sont pas encore chargées, on les charge à la position détectée
+                if (!coinsLoaded) {
+                    const position = new THREE.Vector3();
+                    reticle.matrix.decompose(position, new THREE.Quaternion(), new THREE.Vector3());
+                    coinload(200, position);
+                    coinsLoaded = true;
+
+                }
+
+                // if (created == false) {
+                //     const position = new THREE.Vector3();
+                //     reticle.matrix.decompose(position, new THREE.Quaternion(), new THREE.Vector3());
+                //     carload(position.x, position.y, position.z);
+                //     created = true;
+                // }
+
             } else {
-
                 reticle.visible = false;
-
             }
-
         }
-
     }
-
     renderer.render(scene, camera);
-
 }
