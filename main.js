@@ -18,6 +18,7 @@ import {
   WebGLRenderer
 } from 'three';
 
+
 // XR Emulator
 import { DevUI } from '@iwer/devui';
 import { XRDevice, metaQuest3 } from 'iwer';
@@ -54,6 +55,10 @@ import {
 
 // Example of hard link to official repo for data, if needed
 // const MODEL_PATH = 'https://raw.githubusercontent.com/mrdoob/three.js/r173/examples/models/gltf/LeePerrySmith/LeePerrySmith.glb';
+
+import { JoystickControls } from "./JoystickControls"
+
+
 
 async function setupXR(xrMode) {
 
@@ -95,7 +100,10 @@ await setupXR('immersive-ar');
 
 // INSERT CODE HERE
 let camera, scene, renderer;
+let joystickControls;
 let controller;
+const loader = new GLTFLoader();
+let car;
 
 
 const clock = new Clock();
@@ -107,6 +115,23 @@ const animate = () => {
   const elapsed = clock.getElapsedTime();
 
   // can be used in shaders: uniforms.u_time.value = elapsed;
+
+  joystickControls.update((movement) => {
+    if (movement) {
+      /**
+       * The values reported back might be too large for your scene.
+       * In that case you will need to control the sensitivity.
+       */
+      const sensitivity = 0.0001;
+
+      /**
+       * Do something with the values, for example changing the position
+       * of the object
+       */
+      // this.target.position.x += movement.moveX * sensitivity;
+      // this.target.position.y += movement.moveY * sensitivity;
+    }
+  });
 
   renderer.render(scene, camera);
 };
@@ -151,21 +176,46 @@ const init = () => {
 
   // Handle input: see THREE.js webxr_ar_cones
 
-  const geometry = new CylinderGeometry(0, 0.05, 0.2, 32).rotateX(Math.PI / 2);
+  // const geometry = new CylinderGeometry(0, 0.05, 0.2, 32).rotateX(Math.PI / 2);
 
-  const onSelect = (event) => {
+  // const onSelect = (event) => {
 
-    const material = new MeshPhongMaterial({ color: 0xffffff * Math.random() });
-    const mesh = new Mesh(geometry, material);
-    mesh.position.set(0, 0, - 0.3).applyMatrix4(controller.matrixWorld);
-    mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
-    scene.add(mesh);
+  //   const material = new MeshPhongMaterial({ color: 0xffffff * Math.random() });
+  //   const mesh = new Mesh(geometry, material);
+  //   mesh.position.set(0, 0, - 0.3).applyMatrix4(controller.matrixWorld);
+  //   mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
+  //   scene.add(mesh);
 
-  }
+  // }
 
-  controller = renderer.xr.getController(0);
-  controller.addEventListener('select', onSelect);
-  scene.add(controller);
+  // controller = renderer.xr.getController(0);
+  // controller.addEventListener('select', onSelect);
+  // scene.add(controller);
+
+  loader.load(
+    'assets/models/mario_kart.glb',
+    function (gltf) {
+      car = gltf.scene;
+
+      scene.add(car);
+
+      car.children[0].rotateY(-Math.PI / 2);
+
+      gltf.animations;
+      gltf.scene;
+      gltf.scenes;
+      gltf.asset;
+
+    },
+    function (xhr) {
+      console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+    },
+    function (error) {
+      console.log('An error happened');
+    }
+  );
+
+  joystickControls = new JoystickControls(camera, scene);
 
 
   window.addEventListener('resize', onWindowResize, false);
@@ -202,6 +252,9 @@ loadData();
 
 
 // camera.position.z = 3;
+
+
+
 
 
 
