@@ -3,6 +3,11 @@ THREE.js + WebXR template using [Vite](https://vitejs.dev).
 
 Allows testing and modifying [official THREE.js WebXR examples](https://threejs.org/examples/?q=webxr) locally, at lightning speed.
 
+## The game
+
+To access the game click on this link while on your mobile phone to play it :
+https://fuyutaru.github.io/mario_kARt/
+
 ## Batteries included
 
 Pre-configured to support :
